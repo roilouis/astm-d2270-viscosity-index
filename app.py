@@ -1,5 +1,6 @@
 # app.py
 import streamlit as st
+import math  # Corregirá el NameError en el botón de test
 from src.calculations import calcular_iv_computacional
 
 # 1. Configuración de la página (Metaetiquetas e interfaz)
@@ -57,10 +58,16 @@ with tab1:
             st.info(f"**Criterio de Bifurcación:** {resultado['metodo']}")
             
         # Tabla de parámetros intermedios calculados para auditoría interna
+        # Tabla optimizada: Convertimos todo a string para evitar conflictos con PyArrow
         st.markdown("### Parámetros Intermedios de Control")
         datos_intermedios = {
             "Parámetro": ["L (Constante 0 IV)", "H (Constante 100 IV)", "Factor N (Si aplica)", "IV Sin Redondear"],
-            "Valor Calculado": [resultado["L"], resultado["H"], resultado["N"], resultado["iv_exacto"]]
+            "Valor Calculado": [
+                str(resultado["L"]), 
+                str(resultado["H"]), 
+                str(resultado["N"]), 
+                str(resultado["iv_exacto"])
+            ]
         }
         st.table(datos_intermedios)
         
