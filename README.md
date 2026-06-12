@@ -13,7 +13,7 @@ Diseñada con trazabilidad completa del cálculo para su **validación bajo ISO/
 
 ## ¿Por qué esta herramienta?
 
-Los laboratorios acreditados bajo ISO/IEC 17025 deben validar todo software o herramienta informática utilizada en cálculos de ensayo (§6.4.7). Esto exige demostrar que:
+Los laboratorios acreditados bajo ISO/IEC 17025 deben validar todo software o herramienta informática utilizada en cálculos de ensayo (§7.11). Esto exige demostrar que:
 
 - El algoritmo implementado es fiel a la norma de referencia.
 - Los valores intermedios del cálculo son auditables.
@@ -105,7 +105,7 @@ Los siguientes casos son los ejemplos oficiales del método ASTM D2270 y se ejec
 ## Referencias normativas
 
 - **ASTM D2270 – 10 (2016)** — Standard Practice for Calculating Viscosity Index from Kinematic Viscosity at 40 °C and 100 °C
-- **ISO/IEC 17025:2017** §6.4.7 — Requisitos para equipos informáticos y software en laboratorios
+- **ISO/IEC 17025:2017** §7.11 — Requisitos para equipos informáticos y software en laboratorios
 - **ASTM E29** — Practice for Using Significant Digits in Test Data to Determine Conformance with Specifications
 
 ---
