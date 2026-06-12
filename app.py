@@ -2,8 +2,8 @@
 app.py  –  Calculadora de Índice de Viscosidad ASTM D2270
 ──────────────────────────────────────────────────────────
 Herramienta validable bajo ISO/IEC 17025 con:
-  • Método Sencillo  : Interpolación Tabla 1
-  • Método Preciso   : Ecuaciones cuadráticas Apéndice X2
+  • Método Preciso        : Interpolación Tabla 1
+  • Método (Apéndice X2) : Ecuaciones cuadráticas Tabla X2.1
   • Transparencia de código fuente
   • Tablas de constantes completas
   • Casos de validación incluidos en la norma
@@ -14,8 +14,8 @@ import streamlit as st
 import pandas as pd
 
 from src.calculations import (
-    calcular_iv_sencillo,
-    calcular_iv_preciso,
+    calcular_iv_tabla1,
+    calcular_iv_tablax21,
     TABLE_1,
     TABLE_X21,
 )
@@ -93,21 +93,7 @@ with st.sidebar:
     v_100 = st.number_input(
         "Viscosidad cinemática a **100 °C** — *Y*",
         min_value=2.00, value=8.86, step=0.01, format="%.4f",
-        help="Debe ser ≥ 2.0 mm²/s. Para el método sencillo (Tabla 1) debe ser ≤ 70 mm²/s."
-    )
-
-    st.divider()
-    st.header("🔬 Método de Cálculo")
-
-    metodo = st.radio(
-        "Seleccione el método:",
-        options=["Sencillo (Tabla 1)", "Preciso (Apéndice X2)"],
-        index=1,
-        help=(
-            "**Sencillo**: L y H por interpolación lineal en Tabla 1. Válido para Y ≤ 70 mm²/s.\n\n"
-            "**Preciso**: L y H por ecuaciones cuadráticas de Tabla X2.1. "
-            "Válido para todo el rango. Recomendado para software validado."
-        )
+        help="Debe ser ≥ 2.0 mm²/s. Para el Método Preciso (Tabla 1) debe ser ≤ 70 mm²/s."
     )
 
     st.divider()
@@ -117,10 +103,15 @@ with st.sidebar:
     st.markdown("""
     **Referencias normativas**
     - ASTM D2270 – 10 (2016)
-    - ISO/IEC 17025:2017 §6.4.7
+    - ISO/IEC 17025:2017 §7.11
     - ASTM E29 (redondeo)
     """)
 
+    st.divider()
+    st.markdown("### 🔗 Repositorio")
+    st.markdown(
+	"[![GitHub](https://img.shields.io/badge/GitHub-RoyPizarro--Dev%2Fastm--d2270--viscosity--index-181717?logo=github)](https://github.com/RoyPizarro-Dev/astm-d2270-viscosity-index)"
+    )
 
 # ──────────────────────────────────────────────────────────────────────────────
 # PESTAÑAS PRINCIPALES
@@ -142,22 +133,9 @@ with tab_calc:
         st.info("Ingrese los valores de viscosidad en la barra lateral y presione **▶ Calcular IV**.")
     else:
         try:
-            if metodo.startswith("Sencillo"):
-                res = calcular_iv_sencillo(v_40, v_100)
-                badge = '<span class="badge-sencillo">Método Sencillo – Tabla 1</span>'
-            else:
-                res = calcular_iv_preciso(v_40, v_100)
-                badge = '<span class="badge-preciso">Método Preciso – Apéndice X2</span>'
-
-            # ── Resultado principal ────────────────────────────────────────
-            st.markdown(badge, unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="result-box">
-              <p>Índice de Viscosidad reportado (ASTM E29 – redondeo bancario)</p>
-              <h2>{res['iv_final']}</h2>
-              <p>Valor sin redondear: {res['iv_exacto']}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            # Calcular ambos métodos siempre
+            res_p = calcular_iv_tabla1(v_40, v_100)   # Método Preciso (Tabla 1)
+            res_x = calcular_iv_tablax21(v_40, v_100)    # Método (Apéndice X2)
 
             # ── Datos de entrada confirmados ───────────────────────────────
             st.markdown('<h4 class="section-header">Datos de entrada</h4>', unsafe_allow_html=True)
@@ -165,40 +143,72 @@ with tab_calc:
             col1.metric("U — Viscosidad a 40 °C (mm²/s)", f"{v_40:.4f}")
             col2.metric("Y — Viscosidad a 100 °C (mm²/s)", f"{v_100:.4f}")
 
-            # ── Valores L y H ──────────────────────────────────────────────
+            # ── Resultados simultáneos en dos columnas ─────────────────────
+            st.markdown('<h4 class="section-header">Índice de Viscosidad calculado</h4>', unsafe_allow_html=True)
+            col_r1, col_r2 = st.columns(2)
+
+            with col_r1:
+                st.markdown(f"""
+                <div class="result-box">
+                  <p>Método Preciso (Tabla 1) — interpolación lineal</p>
+                  <h2>{res_p['iv_final']}</h2>
+                  <p>Valor sin redondear: {res_p['iv_exacto']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_r2:
+                st.markdown(f"""
+                <div class="result-box">
+                  <p>Método (Apéndice X2) — ecuaciones cuadráticas</p>
+                  <h2>{res_x['iv_final']}</h2>
+                  <p>Valor sin redondear: {res_x['iv_exacto']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # ── Constantes L y H ──────────────────────────────────────────
             st.markdown('<h4 class="section-header">Constantes L y H</h4>', unsafe_allow_html=True)
-            col3, col4 = st.columns(2)
-            col3.metric("L (IV = 0 de referencia)", f"{res['L']}")
-            col4.metric("H (IV = 100 de referencia)", f"{res['H']}")
+            col_l1, col_h1, col_l2, col_h2 = st.columns(4)
+            col_l1.metric("L — Método Preciso",  f"{res_p['L']}")
+            col_h1.metric("H — Método Preciso",  f"{res_p['H']}")
+            col_l2.metric("L — Apéndice X2",     f"{res_x['L']}")
+            col_h2.metric("H — Apéndice X2",     f"{res_x['H']}")
 
-            if metodo.startswith("Sencillo") and res.get("interpolacion_usada"):
-                di = res["datos_interpolacion"]
-                with st.expander("📐 Detalle de interpolación lineal"):
+            # ── Detalle de obtención de L y H — un expander, dos columnas ─
+            with st.expander("📐 Detalle de obtención de L y H"):
+                col_det1, col_det2 = st.columns(2)
+
+                with col_det1:
+                    st.markdown("**Método Preciso (Tabla 1) — interpolación lineal**")
+                    if res_p.get("interpolacion_usada"):
+                        di = res_p["datos_interpolacion"]
+                        st.markdown(f"""
+| Parámetro | Y₁ = {di['Y1']} | Y₂ = {di['Y2']} | Interpolado |
+|---|---|---|---|
+| **L** | {di['L1']} | {di['L2']} | **{res_p['L']}** |
+| **H** | {di['H1']} | {di['H2']} | **{res_p['H']}** |
+| *Fracción* | | | {di['fraccion']} |
+                        """)
+                    else:
+                        st.info(f"Y = {res_p['Y']} coincide exactamente con una entrada de la Tabla 1. No se requiere interpolación.")
+
+                with col_det2:
+                    st.markdown("**Método (Apéndice X2) — ecuaciones cuadráticas**")
+                    coef = res_x.get("coeficientes_usados", {})
+                    st.markdown(f"**Rango Y**: {coef.get('Rango Y')}")
                     st.markdown(f"""
-                    | Parámetro | Y₁ = {di['Y1']} | Y₂ = {di['Y2']} | Interpolado |
-                    |-----------|----------|----------|------------|
-                    | **L**     | {di['L1']} | {di['L2']} | **{res['L']}** |
-                    | **H**     | {di['H1']} | {di['H2']} | **{res['H']}** |
-                    | *Fracción* | | | {di['fraccion']} |
+| Ecuación | Coef. a/d | Coef. b/e | Coef. c/f |
+|---|---|---|---|
+| **L** = a·Y² + b·Y + c | {coef.get('a (L)')} | {coef.get('b (L)')} | {coef.get('c (L)')} |
+| **H** = d·Y² + e·Y + f | {coef.get('d (H)')} | {coef.get('e (H)')} | {coef.get('f (H)')} |
                     """)
 
-            if metodo.startswith("Preciso"):
-                coef = res.get("coeficientes_usados", {})
-                with st.expander("📐 Coeficientes de ecuación cuadrática usados"):
-                    st.markdown(f"""
-                    **Rango Y**: {coef.get('Rango Y')}
-
-                    | Ecuación | Coef. a/d | Coef. b/e | Coef. c/f |
-                    |----------|-----------|-----------|-----------|
-                    | **L** = a·Y² + b·Y + c | {coef.get('a (L)')} | {coef.get('b (L)')} | {coef.get('c (L)')} |
-                    | **H** = d·Y² + e·Y + f | {coef.get('d (H)')} | {coef.get('e (H)')} | {coef.get('f (H)')} |
-                    """)
-
-            # ── Fórmula y valores intermedios ──────────────────────────────
+            # ── Fórmula y valores intermedios — común a ambos métodos ──────
             st.markdown('<h4 class="section-header">Fórmula aplicada y valores intermedios</h4>', unsafe_allow_html=True)
-            st.info(f"**Criterio**: {res['metodo_lh']}")
-            st.code(res['formula_aplicada'], language="text")
+            st.caption("La fórmula de cálculo del IV a partir de L, H, U e Y es idéntica en ambos métodos. La única diferencia entre ellos es cómo se obtienen L y H.")
+            st.info(f"**Criterio**: {res_p['metodo_lh']}")
+            st.code(res_p['formula_aplicada'], language="text")
 
+            # ── Tabla comparativa de parámetros ───────────────────────────
             df_intermedios = pd.DataFrame({
                 "Parámetro": [
                     "U (viscosidad 40 °C)",
@@ -209,15 +219,6 @@ with tab_calc:
                     "IV exacto (sin redondear)",
                     "IV final (redondeado)",
                 ],
-                "Valor": [
-                    f"{res['U']} mm²/s",
-                    f"{res['Y']} mm²/s",
-                    str(res['L']),
-                    str(res['H']),
-                    str(res['N']),
-                    str(res['iv_exacto']),
-                    str(res['iv_final']),
-                ],
                 "Descripción": [
                     "Dato de entrada",
                     "Dato de entrada",
@@ -226,7 +227,25 @@ with tab_calc:
                     "Factor logarítmico intermedio",
                     "IV antes de redondeo bancario (ASTM E29)",
                     "Valor a reportar",
-                ]
+                ],
+                "Valor (Método Preciso)": [
+                    f"{res_p['U']} mm²/s",
+                    f"{res_p['Y']} mm²/s",
+                    str(res_p['L']),
+                    str(res_p['H']),
+                    str(res_p['N']),
+                    str(res_p['iv_exacto']),
+                    str(res_p['iv_final']),
+                ],
+                "Valor (Método Apéndice X2)": [
+                    f"{res_x['U']} mm²/s",
+                    f"{res_x['Y']} mm²/s",
+                    str(res_x['L']),
+                    str(res_x['H']),
+                    str(res_x['N']),
+                    str(res_x['iv_exacto']),
+                    str(res_x['iv_final']),
+                ],
             })
             st.dataframe(df_intermedios, use_container_width=True, hide_index=True)
 
@@ -241,7 +260,7 @@ with tab_calc:
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_codigo:
     st.markdown("""
-    En cumplimiento con los requisitos de software de **ISO/IEC 17025:2017 §6.4.7**,
+    En cumplimiento con los requisitos de software de **ISO/IEC 17025:2017 §7.11**,
     se expone el código fuente exacto que realiza los cálculos. Esto permite que
     cualquier auditor, cliente o responsable de calidad pueda verificar la lógica
     matemática de la herramienta.
@@ -249,8 +268,8 @@ with tab_codigo:
 
     subtab_core, subtab_sencillo, subtab_preciso = st.tabs([
         "Lógica central (común)",
-        "Método Sencillo – Tabla 1",
-        "Método Preciso – Apéndice X2",
+        "Método Preciso – Tabla 1",
+        "Método (Apéndice X2)",
     ])
 
     with subtab_core:
@@ -290,7 +309,7 @@ iv_final = round(iv_exacto)
         """, language="python")
 
     with subtab_sencillo:
-        st.markdown("### Método Sencillo: Interpolación lineal en Tabla 1")
+        st.markdown("### Método Preciso (Tabla 1): Interpolación lineal")
         st.code("""
 def calcular_lh_tabla1(y: float) -> tuple[float, float]:
     \"\"\"
@@ -316,13 +335,13 @@ def calcular_lh_tabla1(y: float) -> tuple[float, float]:
     return L, H
 
 
-def calcular_iv_sencillo(u: float, y: float) -> dict:
+def calcular_iv_tabla1(u: float, y: float) -> dict:
     L, H = calcular_lh_tabla1(y)
     return _calcular_iv_desde_l_h(u, y, L, H)
         """, language="python")
 
     with subtab_preciso:
-        st.markdown("### Método Preciso: Ecuaciones cuadráticas Tabla X2.1 (Apéndice X2)")
+        st.markdown("### Método (Apéndice X2): Ecuaciones cuadráticas Tabla X2.1")
         st.code("""
 # Tabla X2.1 — 16 rangos de Y, cada uno con coeficientes para:
 #   L = a*Y^2 + b*Y + c
@@ -348,7 +367,7 @@ def calcular_lh_x21(y: float) -> tuple[float, float]:
     raise ValueError(f"Y={y} fuera de rango.")
 
 
-def calcular_iv_preciso(u: float, y: float) -> dict:
+def calcular_iv_tablax21(u: float, y: float) -> dict:
     L, H = calcular_lh_x21(y)
     return _calcular_iv_desde_l_h(u, y, L, H)
         """, language="python")
@@ -458,14 +477,14 @@ with tab_tablas:
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_validacion:
     st.markdown("""
-    ## Validación de la herramienta — ISO/IEC 17025:2017 §6.4.7
+    ## Validación de la herramienta — ISO/IEC 17025:2017 §7.11
 
     Según la norma ISO/IEC 17025, el software utilizado en laboratorios de calibración
     y ensayo debe validarse para asegurar que es adecuado para el uso previsto.
     La validación se realiza comparando los resultados del software con valores de
     referencia establecidos (en este caso, los ejemplos incluidos en la propia norma ASTM D2270).
 
-    A continuación se ejecutan los **tres casos de prueba oficiales** incluidos en el
+    A continuación se ejecutan los **cuatro casos de prueba oficiales** incluidos en el
     numeral **5.2.3.1**, **5.2.4.1**, **5.2.4.2** y el **Apéndice X2.5** del método.
     """)
 
@@ -478,7 +497,7 @@ with tab_validacion:
             "VI_esperado": 92,
             "L_esperado": 119.94,
             "H_esperado": 69.48,
-            "metodo": "preciso",
+            "metodo": "apendice_x2",
             "nota": "Interpolación en Tabla 1 (numeral 5.2.1). L y H obtenidos por interpolación."
         },
         {
@@ -488,7 +507,7 @@ with tab_validacion:
             "VI_esperado": 156,
             "L_esperado": None,
             "H_esperado": 28.975,
-            "metodo": "preciso",
+            "metodo": "apendice_x2",
             "nota": "H = 28.975 por interpolación en Tabla 1."
         },
         {
@@ -498,17 +517,17 @@ with tab_validacion:
             "VI_esperado": 111,
             "L_esperado": None,
             "H_esperado": 57.31,
-            "metodo": "preciso",
+            "metodo": "apendice_x2",
             "nota": "H = 57.31 exacto en Tabla 1."
         },
         {
             "id": "X2.5",
-            "descripcion": "Caso norma Apéndice X2.5 — Método Preciso",
+            "descripcion": "Caso norma Apéndice X2.5 — Método (Apéndice X2)",
             "U": 73.50, "Y": 8.860,
             "VI_esperado": 92,
             "L_esperado": 119.9588,
             "H_esperado": 69.4765,
-            "metodo": "preciso",
+            "metodo": "apendice_x2",
             "nota": "Ejemplo explícito del Apéndice X2. L=119.9588, H=69.4765."
         },
     ]
@@ -518,7 +537,7 @@ with tab_validacion:
         for caso in CASOS_DE_PRUEBA:
             with st.expander(f"{'✅' if True else '❌'} Caso {caso['id']}: {caso['descripcion']}", expanded=True):
                 try:
-                    res = calcular_iv_preciso(caso["U"], caso["Y"])
+                    res = calcular_iv_tablax21(caso["U"], caso["Y"])
 
                     vi_ok = res["iv_final"] == caso["VI_esperado"]
                     if caso["H_esperado"] is not None:
@@ -564,7 +583,7 @@ with tab_validacion:
     Esta herramienta ha sido desarrollada con el objetivo de ser validable bajo **ISO/IEC 17025:2017**.
     Los elementos de validación implementados incluyen:
 
-    | Requisito ISO 17025 §6.4.7 | Implementación en esta herramienta |
+    | Requisito ISO 17025 §7.11 | Implementación en esta herramienta |
     |---|---|
     | Verificación de idoneidad | Casos de prueba con resultados de referencia de la norma ASTM D2270 |
     | Trazabilidad del cálculo | Exposición del código fuente y todos los valores intermedios |
