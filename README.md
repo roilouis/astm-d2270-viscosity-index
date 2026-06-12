@@ -102,6 +102,18 @@ Los siguientes casos son los ejemplos oficiales del método ASTM D2270 y se ejec
 
 ---
 
+## Modelo de informe de validación
+
+Para laboratorios que requieran sustentar formalmente la validación de esta herramienta ante una auditoría o acreditación bajo **ISO/IEC 17025:2017**, se facilita un modelo de informe de validación en formato Word (`.docx`).
+
+El documento incluye portada adaptable, tabla de requisitos funcionales con referencia normativa, casos de prueba de los tres niveles (cálculo, límites e interfaz), tabla de resultados, declaración de aptitud, sección de firmas y control de revisiones.
+
+📄 **[Descargar modelo de informe de validación](./Informe_Validacion_IV_ASTM_D2270.docx)**
+
+> El informe es un modelo orientativo. Los campos entre corchetes `[COMPLETAR]` deben ser adaptados al laboratorio del usuario: nombre del laboratorio, responsables, fechas, versión de la herramienta (hash de commit Git) y resultados obtenidos al ejecutar las pruebas.
+
+---
+
 ## Referencias normativas
 
 - **ASTM D2270 – 10 (2016)** — Standard Practice for Calculating Viscosity Index from Kinematic Viscosity at 40 °C and 100 °C
