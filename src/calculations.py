@@ -5,8 +5,8 @@ Implementación del método ASTM D2270 – 10 (2016)
 "Standard Practice for Calculating Viscosity Index from Kinematic Viscosity at 40 °C and 100 °C"
 
 Incluye dos métodos de cálculo:
-  1. Cálculo Computacional Sencillo  : Interpolación de la Tabla 1 del método.
-  2. Cálculo Computacional Preciso   : Ecuaciones cuadráticas del Apéndice X2 (Tabla X2.1).
+  1. Método Preciso        : Interpolación lineal de la Tabla 1 del método.
+  2. Método (Apéndice X2) : Ecuaciones cuadráticas de la Tabla X2.1.
 
 Autor    : Generado para el proyecto roilouis/astm-d2270-viscosity-index
 Revisión : ISO/IEC 17025 – Trazabilidad de cálculo garantizada
@@ -234,9 +234,9 @@ def calcular_lh_tabla1(y: float) -> dict:
 
     if y < y_min_tabla or y > y_max_tabla:
         raise ValueError(
-            f"Para el método sencillo (Tabla 1), Y debe estar entre {y_min_tabla} y "
+            f"Para el Método Preciso (Tabla 1), Y debe estar entre {y_min_tabla} y "
             f"{y_max_tabla} mm²/s. Valor ingresado: {y}. "
-            f"Use el método preciso (Apéndice X2) para Y > 70 mm²/s."
+            f"Use el Método (Apéndice X2) para Y > 70 mm²/s."
         )
 
     # Verificar si el valor está exactamente en la tabla
@@ -299,7 +299,7 @@ def calcular_iv_sencillo(u: float, y: float) -> dict:
     lh = calcular_lh_tabla1(y)
     L, H = lh["L"], lh["H"]
     resultado = _calcular_iv_desde_l_h(u, y, L, H)
-    resultado["metodo_calculo"] = "Sencillo – Tabla 1 (interpolación lineal)"
+    resultado["metodo_calculo"] = "Método Preciso – Tabla 1 (interpolación lineal)"
     resultado["detalle_lh"] = lh["detalle"]
     resultado["interpolacion_usada"] = lh["interpolacion"]
     if lh["interpolacion"]:
@@ -313,7 +313,7 @@ def calcular_iv_sencillo(u: float, y: float) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÉTODO 2: CÁLCULO COMPUTACIONAL PRECISO  (Apéndice X2 – Tabla X2.1)
+# MÉTODO 2: MÉTODO (APÉNDICE X2)  –  Ecuaciones cuadráticas Tabla X2.1
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_lh_x21(y: float) -> dict:
@@ -346,7 +346,7 @@ def calcular_lh_x21(y: float) -> dict:
 
 def calcular_iv_preciso(u: float, y: float) -> dict:
     """
-    MÉTODO PRECISO (Apéndice X2): Calcula el Índice de Viscosidad usando las
+    MÉTODO (APÉNDICE X2): Calcula el Índice de Viscosidad usando las
     ecuaciones cuadráticas de la Tabla X2.1.
 
     Parámetros:
@@ -359,7 +359,7 @@ def calcular_iv_preciso(u: float, y: float) -> dict:
     lh = calcular_lh_x21(y)
     L, H = lh["L"], lh["H"]
     resultado = _calcular_iv_desde_l_h(u, y, L, H)
-    resultado["metodo_calculo"] = "Preciso – Apéndice X2 (ecuaciones cuadráticas, Tabla X2.1)"
+    resultado["metodo_calculo"] = "Método (Apéndice X2) – ecuaciones cuadráticas, Tabla X2.1"
     resultado["detalle_lh"] = lh["detalle"]
     resultado["coeficientes_usados"] = {
         "Rango Y": f"[{lh['y_min']}, {lh['y_max']}]",
@@ -374,7 +374,7 @@ def calcular_iv_preciso(u: float, y: float) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_iv_computacional(u: float, y: float) -> dict:
-    """Alias del método preciso para compatibilidad con código existente."""
+    """Alias del método (Apéndice X2) para compatibilidad con código existente."""
     return calcular_iv_preciso(u, y)
 
 
